@@ -1,0 +1,71 @@
+# Environment Variables
+.env
+.env.local
+.env.production
+.env.*.local
+
+# n8n Data
+.n8n/
+n8n-data/
+*.credentials.json
+*-credentials.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Temp files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Secrets & Keys
+*.key
+*.pem
+*.p12
+*.pfx
+config.json
+secrets/
+
+# OS Files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Testing
+coverage/
+.nyc_output/
+
+# Production
+dist/
+build/
+
+# Railway
+.railway/
