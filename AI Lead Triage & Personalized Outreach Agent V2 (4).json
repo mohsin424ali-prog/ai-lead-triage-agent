@@ -1,0 +1,1596 @@
+{
+  "name": "AI Lead Triage & Personalized Outreach Agent V2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c5e8eda4-05ef-45d5-958f-83e725a38c19",
+      "name": "Webhook - Lead Intake",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -1344,
+        448
+      ],
+      "webhookId": "lead-intake-webhook",
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "extract-email",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $json.body.email }}"
+            },
+            {
+              "id": "extract-website",
+              "name": "lead_website",
+              "type": "string",
+              "value": "={{ $json.body.website }}"
+            },
+            {
+              "id": "extract-name",
+              "name": "lead_name",
+              "type": "string",
+              "value": "={{ $json.body.name || 'Prospect' }}"
+            },
+            {
+              "id": "extract-company",
+              "name": "lead_company",
+              "type": "string",
+              "value": "={{ $json.body.company || '' }}"
+            },
+            {
+              "id": "timestamp",
+              "name": "submission_time",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "id": "generate-id",
+              "name": "lead_id",
+              "type": "string",
+              "value": "={{ $json.body.email.split('@')[0] + '_' + Date.now() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fa3ef485-1cc3-44a9-bb9b-518e1b86652f",
+      "name": "Extract Lead Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -1120,
+        448
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "business-email-check",
+              "operator": {
+                "type": "string",
+                "operation": "notRegex"
+              },
+              "leftValue": "={{ $json.lead_email }}",
+              "rightValue": "@(gmail|yahoo|hotmail|outlook|aol|icloud|live|protonmail|mail|zoho|inbox|gmx|ymail|rocketmail)\\.com$"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f83a35c3-7fb5-46e4-8ef7-ae52d89fe259",
+      "name": "Validate Business Email",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -896,
+        448
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"rejected\",\n  \"message\": \"Thank you for your interest! We currently only accept business email addresses. Please use your company email.\",\n  \"received_email\": \"{{ $json.lead_email }}\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "f2b3a9e6-dbd1-4f2a-9871-bd06f8e2f0fe",
+      "name": "Reject Personal Email",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        -672,
+        544
+      ],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1OEbfqMfa0bycfDWHePuVgJFu4Pbwbp-2lxRi6gR0uwQ",
+          "cachedResultName": "Lead Tracker"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OEbfqMfa0bycfDWHePuVgJFu4Pbwbp-2lxRi6gR0uwQ/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Email",
+              "lookupValue": "={{ $json.lead_email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ced1426d-9cc5-42bf-9729-2ac732894156",
+      "name": "Check Duplicate Lead",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -672,
+        352
+      ],
+      "typeVersion": 4.7,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5udSx1to5fFyg0ic",
+          "name": "Google Sheets account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "original-email",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_email }}"
+            },
+            {
+              "id": "original-name",
+              "name": "lead_name",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_name }}"
+            },
+            {
+              "id": "original-website",
+              "name": "lead_website",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_website }}"
+            },
+            {
+              "id": "original-company",
+              "name": "lead_company",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_company }}"
+            },
+            {
+              "id": "original-time",
+              "name": "submission_time",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.submission_time }}"
+            },
+            {
+              "id": "original-id",
+              "name": "lead_id",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_id }}"
+            },
+            {
+              "id": "is-duplicate",
+              "name": "is_duplicate",
+              "type": "boolean",
+              "value": "={{ $json.Email ? true : false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c7162076-8b84-49c1-9c7f-2bd39b772c15",
+      "name": "Merge Duplicate Check",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -448,
+        352
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "check-not-duplicate",
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              },
+              "leftValue": "={{ $json.is_duplicate }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e0d44793-8040-423d-a621-76423a8efd5e",
+      "name": "Is New Lead?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -224,
+        352
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"duplicate\",\n  \"message\": \"Thank you! We already have your information and will be in touch soon.\",\n  \"email\": \"{{ $json.lead_email }}\",\n  \"lead_id\": \"{{ $json.lead_id }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "31909d64-9506-452a-9a62-b9554b0a7d0b",
+      "name": "Respond - Duplicate",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        64,
+        400
+      ],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $('Extract Lead Fields').item.json.lead_website.replace(/^https?:\\/\\//, '') }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "5dd5b54a-ed82-43ec-a8fd-fcdfc521c846",
+      "name": "Scrape Website",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "position": [
+        144,
+        224
+      ],
+      "typeVersion": 4.3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=### MISSION:\nEvaluate the following lead for AI automation potential.\n\n### LEAD DATA:\n- **Contact Name**: {{ $('Extract Lead Fields').item.json.lead_name }}\n- **Website URL**: {{ $('Extract Lead Fields').item.json.lead_website }}\n- **Company Name**: {{ $('Extract Lead Fields').item.json.lead_company }}\n\n### EXECUTION STEPS:\n1. Scrape the website content using the provided URL.\n2. Identify specific operational pain points (e.g., manual data entry, customer support volume, scheduling).\n3. Find a unique \"Personalization Hook\" (a specific service, mission statement, or project).\n4. Draft a concise email starting with \"Hi {{ $('Extract Lead Fields').item.json.lead_name }}\".\n5. Output the result following the STRICT JSON format defined in your system instructions.",
+        "options": {
+          "systemMessage": "You are an AI Lead Qualification Agent for GrowthFlow Agency. Your sole purpose is to analyze websites and return structured lead data.\n\n### STRICT RULES:\n1. **JSON ONLY**: You must output ONLY a valid JSON object. Do not include markdown code blocks (```json), preamble, or concluding remarks.\n2. **TOOL USAGE**: Always use the HTTP Request tool to scrape the website content before making an assessment.\n3. **ACCURACY**: Extract the actual company name and industry from the scraped text.\n4. **SCORING**: Use the ICP Criteria to assign a score from 0-100.\n5. **NEVER leave fields empty**: If information is unavailable, use reasonable defaults or \"Unknown\".\n\n### ICP SCORING CRITERIA:\n- **High (80-100)**: SaaS, E-commerce, Enterprise, Tech-forward, mentions of APIs/Integrations.\n- **Medium (50-79)**: Mid-market, Professional Services, clear scaling needs.\n- **Low (0-49)**: Small local businesses, personal blogs, or low-tech operations.\n\n### JSON STRUCTURE:\n{\n  \"company_name\": \"string\",\n  \"icp_score\": number,\n  \"industry\": \"string\",\n  \"company_size\": \"string\",\n  \"reasoning\": \"string\",\n  \"pain_points\": [\"string\"],\n  \"personalization_hook\": \"string\",\n  \"automation_opportunities\": [\"string\"],\n  \"draft_email_subject\": \"string\",\n  \"draft_email_body\": \"string\"\n}"
+        }
+      },
+      "id": "6c098194-9aaa-4851-9314-0c557c783764",
+      "name": "AI Lead Analysis",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "parse-score",
+              "name": "icp_score",
+              "type": "number",
+              "value": "={{ (() => {\n  try {\n    const raw = $json.output;\n    const cleaned = raw.replace(/```(?:json)?\\n?|```/g, '').trim();\n    const parsed = JSON.parse(cleaned);\n    return Number(parsed.icp_score) || 0;\n  } catch (e) {\n    console.error('Parse error:', e);\n    return 0;\n  }\n})() }}"
+            },
+            {
+              "id": "parse-analysis",
+              "name": "analysis",
+              "type": "object",
+              "value": "={{ (() => {\n  try {\n    const raw = $json.output;\n    const cleaned = raw.replace(/```(?:json)?\\n?|```/g, '').trim();\n    const parsed = JSON.parse(cleaned);\n    return {\n      company_name: parsed.company_name || 'Unknown Company',\n      industry: parsed.industry || 'Unknown',\n      company_size: parsed.company_size || 'Unknown',\n      reasoning: parsed.reasoning || 'Analysis pending',\n      pain_points: parsed.pain_points || [],\n      personalization_hook: parsed.personalization_hook || 'N/A',\n      automation_opportunities: parsed.automation_opportunities || [],\n      draft_email_subject: parsed.draft_email_subject || 'Exploring Automation Opportunities',\n      draft_email_body: parsed.draft_email_body || 'Hi there, I wanted to reach out about potential automation opportunities.'\n    };\n  } catch (e) {\n    console.error('Parse error:', e);\n    return {\n      company_name: $('Extract Lead Fields').item.json.lead_company || 'Unknown Company',\n      industry: 'Unknown',\n      company_size: 'Unknown',\n      reasoning: 'Error: Failed to parse AI response',\n      pain_points: [],\n      personalization_hook: 'N/A',\n      automation_opportunities: [],\n      draft_email_subject: 'Exploring Automation Opportunities',\n      draft_email_body: 'Hi there, I wanted to reach out about potential automation opportunities.'\n    };\n  }\n})() }}"
+            },
+            {
+              "id": "carry-name",
+              "name": "lead_name",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_name }}"
+            },
+            {
+              "id": "carry-email",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_email }}"
+            },
+            {
+              "id": "carry-website",
+              "name": "lead_website",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_website }}"
+            },
+            {
+              "id": "carry-company",
+              "name": "lead_company",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_company }}"
+            },
+            {
+              "id": "carry-time",
+              "name": "submission_time",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.submission_time }}"
+            },
+            {
+              "id": "carry-id",
+              "name": "lead_id",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_id }}"
+            },
+            {
+              "id": "processing-status",
+              "name": "processing_status",
+              "type": "string",
+              "value": "success"
+            },
+            {
+              "id": "execution-id",
+              "name": "execution_id",
+              "type": "string",
+              "value": "={{ $execution.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6a87e305-178d-4c8c-87cc-fc461263015c",
+      "name": "Parse AI Results",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        352,
+        16
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "378b0489-f52d-4eda-88cf-345fcf35e736",
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    },
+                    "leftValue": "={{ $json.icp_score }}",
+                    "rightValue": 75
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "0585addf-6b8a-4b0a-b298-4764ba889be4",
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    },
+                    "leftValue": "={{ $json.icp_score }}",
+                    "rightValue": 50
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "d5813558-fa7b-4dd3-8518-72c9e40e6298",
+                    "operator": {
+                      "type": "number",
+                      "operation": "lt"
+                    },
+                    "leftValue": "={{ $json.icp_score }}",
+                    "rightValue": 50
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ffe3f95a-ecd9-4fc9-80d5-e77b027c4569",
+      "name": "Route By Score",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        576,
+        96
+      ],
+      "typeVersion": 3.3
+    },
+    {
+      "parameters": {
+        "sendTo": "alilaptop393@gmail.com",
+        "subject": "=🔥 HIGH-VALUE LEAD: {{ $json.analysis.company_name }} ({{ $json.icp_score }}/100)",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }\n    .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; }\n    .score { font-size: 48px; font-weight: bold; color: #10b981; }\n    .section { background: #f9fafb; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #667eea; }\n    .email-draft { background: white; padding: 20px; border: 2px solid #e5e7eb; border-radius: 8px; font-style: italic; }\n    .button { display: inline-block; background: #10b981; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 5px; }\n    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }\n    .info-item { padding: 10px; background: white; border-radius: 5px; }\n    .label { font-weight: bold; color: #667eea; }\n    .instructions { background: #fffbeb; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>🎯 High-Value Lead Alert</h1>\n      <div class=\"score\">{{ $json.icp_score }}/100</div>\n    </div>\n\n    <div class=\"section\">\n      <h2>📊 Lead Information</h2>\n      <div class=\"info-grid\">\n        <div class=\"info-item\"><span class=\"label\">Company:</span> {{ $json.analysis.company_name }}</div>\n        <div class=\"info-item\"><span class=\"label\">Industry:</span> {{ $json.analysis.industry }}</div>\n        <div class=\"info-item\"><span class=\"label\">Contact:</span> {{ $json.lead_name }}</div>\n        <div class=\"info-item\"><span class=\"label\">Email:</span> {{ $json.lead_email }}</div>\n        <div class=\"info-item\"><span class=\"label\">Website:</span> {{ $json.lead_website }}</div>\n        <div class=\"info-item\"><span class=\"label\">Size:</span> {{ $json.analysis.company_size }}</div>\n      </div>\n    </div>\n\n    <div class=\"section\">\n      <h2>🤖 AI Analysis</h2>\n      <p><span class=\"label\">Reasoning:</span> {{ $json.analysis.reasoning }}</p>\n      <p><span class=\"label\">Personalization Hook:</span> {{ $json.analysis.personalization_hook }}</p>\n      \n      <p><span class=\"label\">Pain Points Identified:</span></p>\n      <ul>\n        {{ $json.analysis.pain_points && $json.analysis.pain_points.length > 0 ? $json.analysis.pain_points.map(p => '<li>' + p + '</li>').join('') : '<li>No specific pain points identified</li>' }}\n      </ul>\n      \n      <p><span class=\"label\">Automation Opportunities:</span></p>\n      <ul>\n        {{ $json.analysis.automation_opportunities && $json.analysis.automation_opportunities.length > 0 ? $json.analysis.automation_opportunities.map(o => '<li>' + o + '</li>').join('') : '<li>General automation assessment needed</li>' }}\n      </ul>\n    </div>\n\n    <div class=\"section\">\n      <h2>📧 Draft Email Ready</h2>\n      <div class=\"email-draft\">\n        <p><strong>Subject:</strong> {{ $json.analysis.draft_email_subject }}</p>\n        <hr>\n        <p style=\"white-space: pre-line;\">{{ $json.analysis.draft_email_body }}</p>\n      </div>\n    </div>\n\n    <div class=\"instructions\">\n      <p><strong>⚠️ APPROVAL INSTRUCTIONS:</strong></p>\n      <p>Click the button below to approve and send this email. The link contains execution ID: <strong>{{ $json.execution_id }}</strong></p>\n      <p style=\"font-size: 12px; color: #666; margin-top: 10px;\">If the button doesn't work, copy and paste this URL into your browser:<br>\n      <code style=\"background: white; padding: 5px; display: block; word-break: break-all; margin-top: 5px;\">{{ $execution.resumeUrl }}</code></p>\n    </div>\n\n    <div style=\"text-align: center; padding: 30px;\">\n      <a href=\"{{ $execution.resumeUrl }}\" class=\"button\">\n        ✅ APPROVE & SEND EMAIL\n      </a>\n      <br>\n      <small style=\"color: #6b7280;\">This will immediately send the email to {{ $json.lead_email }}</small>\n    </div>\n\n    <div style=\"text-align: center; padding: 20px; background: #f3f4f6; border-radius: 8px;\">\n      <p style=\"margin: 0; color: #6b7280; font-size: 12px;\">Lead ID: {{ $json.lead_id }} | Execution: {{ $json.execution_id }} | Received: {{ $json.submission_time }}</p>\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "fd7239ca-50cf-4ae2-a2e6-a329a0c9a034",
+      "name": "Notify SDR - High Value",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        800,
+        16
+      ],
+      "webhookId": "3a34ec47-60d3-4f8c-be1b-4eb8b90a551a",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "iR1571IvOH6iy8te",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {}
+      },
+      "id": "9ad15b73-be2c-4ff2-8347-53ece56abad6",
+      "name": "Wait for Approval",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        1024,
+        16
+      ],
+      "webhookId": "approval-webhook",
+      "typeVersion": 1.1,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Parse AI Results').item.json.lead_email}}",
+        "subject": "={{$('Parse AI Results').item.json.analysis.draft_email_subject}}",
+        "message": "={{$('Parse AI Results').item.json.analysis.draft_email_body}}",
+        "options": {
+          "ccList": "alilaptop393@gmail.com"
+        }
+      },
+      "id": "048e9cd9-aeaf-4980-86f7-f3cb92a8bd8a",
+      "name": "Send to Prospect",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1248,
+        16
+      ],
+      "webhookId": "dd1fce2d-8c0e-4a13-8cf8-e7ba86c21a43",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "iR1571IvOH6iy8te",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1OEbfqMfa0bycfDWHePuVgJFu4Pbwbp-2lxRi6gR0uwQ",
+          "cachedResultName": "Lead Tracker"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OEbfqMfa0bycfDWHePuVgJFu4Pbwbp-2lxRi6gR0uwQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.lead_email }}",
+            "Status": "High Value - Email Sent",
+            "Lead ID": "={{ $json.lead_id }}",
+            "Website": "={{ $json.lead_website }}",
+            "Industry": "={{ $json.analysis.industry }}",
+            "ICP Score": "={{ $json.icp_score }}",
+            "Reasoning": "={{ $json.analysis.reasoning }}",
+            "Draft Body": "={{ $json.analysis.draft_email_body }}",
+            "Pain Points": "={{ $json.analysis.pain_points ? $json.analysis.pain_points.join('; ') : '' }}",
+            "Company Name": "={{ $json.analysis.company_name }}",
+            "Company Size": "={{ $json.analysis.company_size }}",
+            "Contact Name": "={{ $json.lead_name }}",
+            "Draft Subject": "={{ $json.analysis.draft_email_subject }}",
+            "Submission Time": "={{ $json.submission_time }}",
+            "Automation Opportunities": "={{ $json.analysis.automation_opportunities ? $json.analysis.automation_opportunities.join('; ') : '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Lead ID",
+              "displayName": "Lead ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contact Name",
+              "displayName": "Contact Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Size",
+              "displayName": "Company Size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ICP Score",
+              "displayName": "ICP Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Draft Subject",
+              "displayName": "Draft Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Draft Body",
+              "displayName": "Draft Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reasoning",
+              "displayName": "Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pain Points",
+              "displayName": "Pain Points",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Automation Opportunities",
+              "displayName": "Automation Opportunities",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Submission Time",
+              "displayName": "Submission Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Processed Time",
+              "displayName": "Processed Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "74e8a593-644b-41d6-8528-dc9c5e6b04c0",
+      "name": "Log to Sheets - High Value",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        1472,
+        16
+      ],
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5udSx1to5fFyg0ic",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1OEbfqMfa0bycfDWHePuVgJFu4Pbwbp-2lxRi6gR0uwQ",
+          "cachedResultName": "Lead Tracker"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OEbfqMfa0bycfDWHePuVgJFu4Pbwbp-2lxRi6gR0uwQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.lead_email }}",
+            "Status": "Medium Value - Nurture Queue",
+            "Lead ID": "={{ $json.lead_id }}",
+            "Website": "={{ $json.lead_website }}",
+            "Industry": "={{ $json.analysis.industry }}",
+            "ICP Score": "={{ $json.icp_score }}",
+            "Reasoning": "={{ $json.analysis.reasoning }}",
+            "Draft Body": "={{ $json.analysis.draft_email_body }}",
+            "Pain Points": "={{ $json.analysis.pain_points ? $json.analysis.pain_points.join('; ') : '' }}",
+            "Company Name": "={{ $json.analysis.company_name }}",
+            "Company Size": "={{ $json.analysis.company_size }}",
+            "Contact Name": "={{ $json.lead_name }}",
+            "Draft Subject": "={{ $json.analysis.draft_email_subject }}",
+            "Processed Time": "={{ $now.toISO() }}",
+            "Submission Time": "={{ $json.submission_time }}",
+            "Automation Opportunities": "={{ $json.analysis.automation_opportunities ? $json.analysis.automation_opportunities.join('; ') : '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Lead ID",
+              "displayName": "Lead ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contact Name",
+              "displayName": "Contact Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Size",
+              "displayName": "Company Size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ICP Score",
+              "displayName": "ICP Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Draft Subject",
+              "displayName": "Draft Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Draft Body",
+              "displayName": "Draft Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reasoning",
+              "displayName": "Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pain Points",
+              "displayName": "Pain Points",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Automation Opportunities",
+              "displayName": "Automation Opportunities",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Submission Time",
+              "displayName": "Submission Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Processed Time",
+              "displayName": "Processed Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "103d211e-a366-4104-a805-7c048a9998b5",
+      "name": "Log to Sheets - Medium Value",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        800,
+        208
+      ],
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5udSx1to5fFyg0ic",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "alilaptop393@gmail.com",
+        "subject": "=📋 Medium Lead: {{ $json.analysis.company_name }} ({{ $json.icp_score }}/100)",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb; border-radius: 10px;\">\n  <h2 style=\"color: #667eea;\">📋 Medium-Value Lead Added to Nurture Queue</h2>\n  \n  <div style=\"background: white; padding: 20px; border-radius: 8px; margin: 20px 0;\">\n    <p><strong>Company:</strong> {{ $json.analysis.company_name }}</p>\n    <p><strong>Contact:</strong> {{ $json.lead_name }}</p>\n    <p><strong>Email:</strong> {{ $json.lead_email }}</p>\n    <p><strong>Website:</strong> {{ $json.lead_website }}</p>\n    <p><strong>Industry:</strong> {{ $json.analysis.industry }}</p>\n    <p><strong>Score:</strong> {{ $json.icp_score }}/100</p>\n  </div>\n  \n  <div style=\"background: #fffbeb; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;\">\n    <p><strong>💡 Reasoning:</strong> {{ $json.analysis.reasoning }}</p>\n    <p><strong>🎯 Personalization Hook:</strong> {{ $json.analysis.personalization_hook }}</p>\n  </div>\n  \n  <div style=\"background: white; padding: 20px; border-radius: 8px; margin-top: 20px;\">\n    <h3>📧 Draft Email Available</h3>\n    <p><strong>Subject:</strong> {{ $json.analysis.draft_email_subject }}</p>\n    <p style=\"font-style: italic; color: #666;\">{{ $json.analysis.draft_email_body.substring(0, 200) }}...</p>\n  </div>\n  \n  <p style=\"color: #6b7280; font-size: 12px; text-align: center; margin-top: 20px;\">Consider adding to your next email campaign or nurture sequence.</p>\n</div>",
+        "options": {}
+      },
+      "id": "4c2b9bde-98a1-4f45-b077-5a3306ec94e0",
+      "name": "Notify SDR - Medium Value",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1024,
+        208
+      ],
+      "webhookId": "74a14a4e-42f4-4c8e-a58c-96e0f4fc8272",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "iR1571IvOH6iy8te",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1OEbfqMfa0bycfDWHePuVgJFu4Pbwbp-2lxRi6gR0uwQ",
+          "cachedResultName": "Lead Tracker"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1OEbfqMfa0bycfDWHePuVgJFu4Pbwbp-2lxRi6gR0uwQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.lead_email }}",
+            "Status": "Low Value - Archived",
+            "Lead ID": "={{ $json.lead_id }}",
+            "Website": "={{ $json.lead_website }}",
+            "Industry": "={{ $json.analysis.industry }}",
+            "ICP Score": "={{ $json.icp_score }}",
+            "Reasoning": "={{ $json.analysis.reasoning }}",
+            "Draft Body": "={{ $json.analysis.draft_email_body }}",
+            "Pain Points": "={{ $json.analysis.pain_points ? $json.analysis.pain_points.join('; ') : '' }}",
+            "Company Name": "={{ $json.analysis.company_name }}",
+            "Company Size": "={{ $json.analysis.company_size }}",
+            "Contact Name": "={{ $json.lead_name }}",
+            "Draft Subject": "={{ $json.analysis.draft_email_subject }}",
+            "Processed Time": "={{ $now.toISO() }}",
+            "Submission Time": "={{ $json.submission_time }}",
+            "Automation Opportunities": "={{ $json.analysis.automation_opportunities ? $json.analysis.automation_opportunities.join('; ') : '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Lead ID",
+              "displayName": "Lead ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contact Name",
+              "displayName": "Contact Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Size",
+              "displayName": "Company Size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ICP Score",
+              "displayName": "ICP Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Draft Subject",
+              "displayName": "Draft Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Draft Body",
+              "displayName": "Draft Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reasoning",
+              "displayName": "Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pain Points",
+              "displayName": "Pain Points",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Automation Opportunities",
+              "displayName": "Automation Opportunities",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Submission Time",
+              "displayName": "Submission Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Processed Time",
+              "displayName": "Processed Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "23d50ed8-d09d-4c49-acdc-e8e13f5129ea",
+      "name": "Log to Sheets - Low Value",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        1024,
+        400
+      ],
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5udSx1to5fFyg0ic",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Thank you for your interest! We've received your submission and will review it shortly.\",\n  \"lead_id\": \"{{$('Parse AI Results').item.json.lead_id}}\",\n  \"lead_score\": {{$('Parse AI Results').item.json.icp_score}},\n  \"company\": \"{{$('Parse AI Results').item.json.analysis.company_name}}\"\n}",
+        "options": {}
+      },
+      "id": "18809571-3807-4c42-aa22-2d27dcf312e8",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1248,
+        304
+      ],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"received\",\n  \"message\": \"Thank you for your submission! We'll be in touch soon.\",\n  \"lead_id\": \"{{ $json.lead_id }}\",\n  \"company\": \"{{ $json.analysis.company_name }}\"\n}",
+        "options": {}
+      },
+      "id": "2fcdf000-e6c2-4ee0-8799-71dc0cd1cb77",
+      "name": "Respond - High Value",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1696,
+        16
+      ],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error-score",
+              "name": "icp_score",
+              "type": "number",
+              "value": 0
+            },
+            {
+              "id": "error-analysis",
+              "name": "analysis",
+              "type": "object",
+              "value": "={{ {\n  company_name: $('Extract Lead Fields').item.json.lead_company || 'Unknown Company',\n  industry: 'Unknown',\n  company_size: 'Unknown',\n  reasoning: 'Error: Website scraping failed or timeout',\n  pain_points: [],\n  personalization_hook: 'N/A',\n  automation_opportunities: [],\n  draft_email_subject: 'Exploring Automation Opportunities',\n  draft_email_body: 'Hi ' + $('Extract Lead Fields').item.json.lead_name + ', I wanted to reach out about potential automation opportunities.'\n} }}"
+            },
+            {
+              "id": "error-name",
+              "name": "lead_name",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_name }}"
+            },
+            {
+              "id": "error-email",
+              "name": "lead_email",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_email }}"
+            },
+            {
+              "id": "error-website",
+              "name": "lead_website",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_website }}"
+            },
+            {
+              "id": "error-company",
+              "name": "lead_company",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_company }}"
+            },
+            {
+              "id": "error-time",
+              "name": "submission_time",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.submission_time }}"
+            },
+            {
+              "id": "error-id",
+              "name": "lead_id",
+              "type": "string",
+              "value": "={{ $('Extract Lead Fields').item.json.lead_id }}"
+            },
+            {
+              "id": "error-status",
+              "name": "processing_status",
+              "type": "string",
+              "value": "error"
+            },
+            {
+              "id": "error-execution",
+              "name": "execution_id",
+              "type": "string",
+              "value": "={{ $execution.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bc7e2b2c-0575-4184-8729-389ba1615966",
+      "name": "Handle Error",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        352,
+        208
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        208
+      ],
+      "id": "bf6c4d4d-d176-4930-a281-e6f289f9c04f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "nS57JHNcPaOOrEzW",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook - Lead Intake": [
+      {
+        "json": {
+          "headers": {
+            "host": "primary-production-6e393.up.railway.app",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+            "content-length": "106",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8,ur;q=0.7",
+            "content-type": "application/json",
+            "dnt": "1",
+            "origin": "null",
+            "priority": "u=1, i",
+            "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "223.123.88.101",
+            "x-forwarded-host": "primary-production-6e393.up.railway.app",
+            "x-forwarded-proto": "https",
+            "x-railway-edge": "railway/asia-southeast1-eqsg3a",
+            "x-railway-request-id": "tw_eMbANTv-PjvalV7rehQ",
+            "x-real-ip": "223.123.88.101",
+            "x-request-start": "1767823358138"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "name": "Mohsin Ali",
+            "email": "mohsin424ali+n8n@gmail.com",
+            "company": "tesla",
+            "website": "https://tesla.com"
+          },
+          "webhookUrl": "https://primary-production-6e393.up.railway.app/webhook/lead-intake",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Handle Error": {
+      "main": [
+        [
+          {
+            "node": "Route By Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is New Lead?": {
+      "main": [
+        [
+          {
+            "node": "AI Lead Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By Score": {
+      "main": [
+        [
+          {
+            "node": "Notify SDR - High Value",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log to Sheets - Medium Value",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log to Sheets - Low Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Website": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Lead Analysis",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Lead Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Results": {
+      "main": [
+        [
+          {
+            "node": "Route By Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Prospect": {
+      "main": [
+        [
+          {
+            "node": "Log to Sheets - High Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Approval": {
+      "main": [
+        [
+          {
+            "node": "Send to Prospect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Lead Fields": {
+      "main": [
+        [
+          {
+            "node": "Validate Business Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate Lead": {
+      "main": [
+        [
+          {
+            "node": "Merge Duplicate Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Lead Intake": {
+      "main": [
+        [
+          {
+            "node": "Extract Lead Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Duplicate Check": {
+      "main": [
+        [
+          {
+            "node": "Is New Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify SDR - High Value": {
+      "main": [
+        [
+          {
+            "node": "Wait for Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Business Email": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Personal Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Sheets - Low Value": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify SDR - Medium Value": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Sheets - High Value": {
+      "main": [
+        [
+          {
+            "node": "Respond - High Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Sheets - Medium Value": {
+      "main": [
+        [
+          {
+            "node": "Notify SDR - Medium Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Lead Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "d9f928a7-c94e-4bf7-b621-d1bfe52e4520",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3216142ef0c6e65fc3baa2d3dd694128d181bd19516d91a0aca74bbe1571483a"
+  },
+  "id": "gzS-MXWiwD5r05DSp-oHQ",
+  "tags": []
+}
